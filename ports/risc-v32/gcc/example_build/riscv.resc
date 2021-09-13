@@ -1,0 +1,17 @@
+:name: Mi-V
+:description: This script runs AzureRTOS sample on a Mi-V RISC-V board.
+
+$name?="Mi-V"
+
+using sysbus
+mach create $name
+machine LoadPlatformDescription @platforms/boards/miv-board.repl
+
+showAnalyzer uart
+
+macro reset
+"""
+    sysbus LoadELF  @build/sample_threadx.elf
+"""
+runMacro $reset
+machine StartGdbServer 3333

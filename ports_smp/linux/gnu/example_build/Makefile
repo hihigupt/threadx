@@ -15,7 +15,7 @@ ARCH = -m32
 endif
 COMMON_PATH=$(DIR)/../../../../common_smp
 INCLUDES = -I$(COMMON_PATH)/inc -I$(DIR)/../inc
-CFLAGS = -g3 $(ARCH) -g3 -fPIC -gdwarf-2 -std=c99 $(DEFINES) $(INCLUDES)
+CFLAGS = -g3 $(ARCH) -g3 -fPIC -gdwarf-2 -std=c99 $(DEFINES) $(INCLUDES) -DTX_ENABLE_EVENT_TRACE
 LINK = gcc $(ARCH)
 LIBS = -lpthread -lrt
 FILE_LIST = file_list.mk

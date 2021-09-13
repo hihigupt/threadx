@@ -1,18 +1,19 @@
-/* This is a small demo of the high-performance ThreadX SMP kernel.  It includes examples of eight
-   threads of different priorities, using a message queue, semaphore, mutex, event flags group,
-   byte pool, and block pool.  */
+/* This is a small demo of the high-performance ThreadX kernel.  It includes examples of eight
+   threads of different priorities, using a message queue, semaphore, mutex, event flags group, 
+   byte pool, and block pool. Please refer to Chapter 6 of the ThreadX User Guide for a complete
+   description of this demonstration.  */
 
-#include   "tx_api.h"
-#include   <stdio.h>
+#include "tx_api.h"
 
-#define     DEMO_STACK_SIZE         1024
-#define     DEMO_BYTE_POOL_SIZE     9120
-#define     DEMO_BLOCK_POOL_SIZE    100
-#define     DEMO_QUEUE_SIZE         100
+#include <stdint.h>
 
-#ifdef TX_ENABLE_EVENT_TRACE
-UCHAR   trace_buffer[0x40000];
-#endif
+#include "encoding.h"
+
+#define DEMO_STACK_SIZE         1024
+#define DEMO_BYTE_POOL_SIZE     9120
+#define DEMO_BLOCK_POOL_SIZE    100
+#define DEMO_QUEUE_SIZE         100
+
 
 /* Define the ThreadX object control blocks...  */
 
@@ -32,18 +33,30 @@ TX_BYTE_POOL            byte_pool_0;
 TX_BLOCK_POOL           block_pool_0;
 
 
+/* Define byte pool memory.  */
+
+UCHAR                   byte_pool_memory[DEMO_BYTE_POOL_SIZE];
+
+
+/* Define event buffer.  */
+
+#ifdef TX_ENABLE_EVENT_TRACE
+UCHAR   trace_buffer[0x40000];
+#endif
+
+
 /* Define the counters used in the demo application...  */
 
-ULONG           thread_0_counter;
-ULONG           thread_1_counter;
-ULONG           thread_1_messages_sent;
-ULONG           thread_2_counter;
-ULONG           thread_2_messages_received;
-ULONG           thread_3_counter;
-ULONG           thread_4_counter;
-ULONG           thread_5_counter;
-ULONG           thread_6_counter;
-ULONG           thread_7_counter;
+ULONG                   thread_0_counter;
+ULONG                   thread_1_counter;
+ULONG                   thread_1_messages_sent;
+ULONG                   thread_2_counter;
+ULONG                   thread_2_messages_received;
+ULONG                   thread_3_counter;
+ULONG                   thread_4_counter;
+ULONG                   thread_5_counter;
+ULONG                   thread_6_counter;
+ULONG                   thread_7_counter;
 
 
 /* Define thread prototypes.  */
@@ -55,30 +68,91 @@ void    thread_3_and_4_entry(ULONG thread_input);
 void    thread_5_entry(ULONG thread_input);
 void    thread_6_and_7_entry(ULONG thread_input);
 
+typedef struct
+{
+    volatile uint32_t MSIP[4095];
+    volatile uint32_t reserved;
+    volatile uint64_t MTIMECMP[4095];
+    volatile const uint64_t MTIME;
+} PRCI_Type;
+
+#define PRCI_BASE   0x44000000UL
+#define PRCI    ((PRCI_Type *)PRCI_BASE) 
+
+static uint32_t g_systick_increment;
+
+uint32_t SysTick_Config(uint32_t ticks)
+{
+#define RTC_PRESCALER 10000UL
+
+    uint32_t ret_val = 1;
+
+    g_systick_increment = (uint64_t)(ticks) / RTC_PRESCALER;
+
+    if (g_systick_increment > 0U)
+    {
+        uint32_t mhart_id = read_csr(mhartid);
+
+        PRCI->MTIMECMP[mhart_id] = PRCI->MTIME + g_systick_increment;
+
+        set_csr(mie, MIP_MTIP);
+
+        ret_val = 0;
+    }
+
+    return ret_val;
+}
+
+static void handle_m_timer_interrupt(void)
+{
+    clear_csr(mie, MIP_MTIP);
+
+    PRCI->MTIMECMP[read_csr(mhartid)] = PRCI->MTIME + g_systick_increment;
+
+    set_csr(mie, MIP_MTIP);
+}
+
+uintptr_t handle_trap(uintptr_t mcause, uintptr_t mepc)
+{
+    if ((mcause & MCAUSE_INT) && ((mcause & MCAUSE_CAUSE)  == IRQ_M_TIMER))
+    {
+        _tx_timer_interrupt();
+        handle_m_timer_interrupt();
+    }
+}
 
 /* Define main entry point.  */
 
 int main()
 {
+    
+    /* Please refer to Chapter 6 of the ThreadX User Guide for a complete
+       description of this demonstration.  */
+    
+    clear_csr(mstatus, MSTATUS_MPIE);
+    clear_csr(mstatus, MSTATUS_MIE);
+
+    /* Intialize timer */
+    SysTick_Config(66000000UL);
 
     /* Enter the ThreadX kernel.  */
     tx_kernel_enter();
 }
-
 
 /* Define what the initial system looks like.  */
 
 void    tx_application_define(void *first_unused_memory)
 {
 
-CHAR    *pointer = TX_NULL;
+CHAR    *pointer;
+
 
 #ifdef TX_ENABLE_EVENT_TRACE
     tx_trace_enable(trace_buffer, sizeof(trace_buffer), 32);
 #endif
 
     /* Create a byte memory pool from which to allocate the thread stacks.  */
-    tx_byte_pool_create(&byte_pool_0, "byte pool 0", first_unused_memory, DEMO_BYTE_POOL_SIZE);
+    tx_byte_pool_create(&byte_pool_0, "byte pool 0", byte_pool_memory, DEMO_BYTE_POOL_SIZE);
 
     /* Put system definition stuff in here, e.g. thread creates and other assorted
        create information.  */
@@ -90,7 +164,6 @@ CHAR    *pointer = TX_NULL;
     tx_thread_create(&thread_0, "thread 0", thread_0_entry, 0,  
             pointer, DEMO_STACK_SIZE, 
             1, 1, TX_NO_TIME_SLICE, TX_AUTO_START);
-
 
     /* Allocate the stack for thread 1.  */
     tx_byte_allocate(&byte_pool_0, (VOID **) &pointer, DEMO_STACK_SIZE, TX_NO_WAIT);
@@ -178,7 +251,6 @@ CHAR    *pointer = TX_NULL;
 }
 
 
-
 /* Define the test threads.  */
 
 void    thread_0_entry(ULONG thread_input)
@@ -194,17 +266,6 @@ UINT    status;
         /* Increment the thread counter.  */
         thread_0_counter++;
 
-        /* Print results.  */
-        printf("**** ThreadX SMP Linux Demonstration **** (c) 1996-2020 Microsoft Corporation\n\n");
-        printf("           thread 0 events sent:          %lu\n", thread_0_counter);
-        printf("           thread 1 messages sent:        %lu\n", thread_1_counter);
-        printf("           thread 2 messages received:    %lu\n", thread_2_counter);
-        printf("           thread 3 obtained semaphore:   %lu\n", thread_3_counter);
-        printf("           thread 4 obtained semaphore:   %lu\n", thread_4_counter);
-        printf("           thread 5 events received:      %lu\n", thread_5_counter);
-        printf("           thread 6 mutex obtained:       %lu\n", thread_6_counter);
-        printf("           thread 7 mutex obtained:       %lu\n\n", thread_7_counter);
-
         /* Sleep for 10 ticks.  */
         tx_thread_sleep(10);
 
@@ -213,7 +274,7 @@ UINT    status;
 
         /* Check status.  */
         if (status != TX_SUCCESS)
-            break;
+           break;
     }
 }
 
