@@ -92,6 +92,33 @@ _tx_thread_context_restore:
 
     /* if (--_tx_thread_system_state) { */
 
+#if __riscv_32e
+    /* Recover floating point registers.  */
+
+    flw     f0, 0x7C(sp)                        # Recover ft0
+    flw     f1, 0x80(sp)                        # Recover ft1
+    flw     f2, 0x84(sp)                        # Recover ft2
+    flw     f3, 0x88(sp)                        # Recover ft3
+    flw     f4, 0x8C(sp)                        # Recover ft4
+    flw     f5, 0x90(sp)                        # Recover ft5
+    flw     f6, 0x94(sp)                        # Recover ft6
+    flw     f7, 0x98(sp)                        # Recover ft7
+    flw     f10,0xA4(sp)                        # Recover fa0
+    flw     f11,0xA8(sp)                        # Recover fa1
+    flw     f12,0xAC(sp)                        # Recover fa2
+    flw     f13,0xB0(sp)                        # Recover fa3
+    flw     f14,0xB4(sp)                        # Recover fa4
+    flw     f15,0xB8(sp)                        # Recover fa5
+    flw     f16,0xBC(sp)                        # Recover fa6
+    flw     f17,0xC0(sp)                        # Recover fa7
+    flw     f28,0xEC(sp)                        # Recover ft8
+    flw     f29,0xF0(sp)                        # Recover ft9
+    flw     f30,0xF4(sp)                        # Recover ft10
+    flw     f31,0xF8(sp)                        # Recover ft11
+    lw      t0, 0xFC(sp)                        # Recover fcsr
+    csrw    fcsr, t0                            # 
+#endif
+
     lw      t0, 0x78(sp)                        # Recover mepc
     csrw    mepc, t0                            # Setup mepc
     li      t0, 0x1880                          # Prepare MPIP
@@ -115,7 +142,12 @@ _tx_thread_context_restore:
     lw      x30, 0x38(sp)                       # Recover t5
     lw      x31, 0x34(sp)                       # Recover t6
 
+#if __riscv_32e
+    addi    sp, sp, 260                         # Recover stack frame with floating point enabled
+#else
     addi    sp, sp, 128                         # Recover stack frame
+#endif
+
     mret                                        # Return to point of interrupt
 
     /*} else {*/
@@ -126,7 +158,13 @@ _tx_thread_not_nested_restore:
 
     /* if (_tx_thread_current_ptr == NULL) {*/
     /* Remove the old frame */
-    addi    sp, sp, 128                         # Recover stack frame    
+
+#if __riscv_32e
+    addi    sp, sp, 260                         # Recover stack frame with floating point enabled
+#else
+    addi    sp, sp, 128                         # Recover stack frame
+#endif
+
     j       _tx_thread_context_restore_idle_restore
 
     /*} else if (_tx_thread_current_ptr == _tx_thread_execute_ptr ||
@@ -143,6 +181,34 @@ _tx_thread_context_restore_check_switch:
 _tx_thread_context_restore_no_preemption:    
     lw      sp, 8(t1)
 
+#if __riscv_32e
+
+    /* Recover floating point registers.  */
+
+    flw     f0, 0x7C(sp)                        # Recover ft0
+    flw     f1, 0x80(sp)                        # Recover ft1
+    flw     f2, 0x84(sp)                        # Recover ft2
+    flw     f3, 0x88(sp)                        # Recover ft3
+    flw     f4, 0x8C(sp)                        # Recover ft4
+    flw     f5, 0x90(sp)                        # Recover ft5
+    flw     f6, 0x94(sp)                        # Recover ft6
+    flw     f7, 0x98(sp)                        # Recover ft7
+    flw     f10,0xA4(sp)                        # Recover fa0
+    flw     f11,0xA8(sp)                        # Recover fa1
+    flw     f12,0xAC(sp)                        # Recover fa2
+    flw     f13,0xB0(sp)                        # Recover fa3
+    flw     f14,0xB4(sp)                        # Recover fa4
+    flw     f15,0xB8(sp)                        # Recover fa5
+    flw     f16,0xBC(sp)                        # Recover fa6
+    flw     f17,0xC0(sp)                        # Recover fa7
+    flw     f28,0xEC(sp)                        # Recover ft8
+    flw     f29,0xF0(sp)                        # Recover ft9
+    flw     f30,0xF4(sp)                        # Recover ft10
+    flw     f31,0xF8(sp)                        # Recover ft11
+    lw      t0, 0xFC(sp)                        # Recover fcsr
+    csrw    fcsr, t0                            # 
+#endif
+
     lw      t0, 0x78(sp)                        # Recover mepc
     csrw    mepc, t0                            # Setup mepc
     li      t0, 0x1880                          # Prepare MPIP
@@ -166,7 +232,11 @@ _tx_thread_context_restore_no_preemption:
     lw      x30, 0x38(sp)                       # Recover t5
     lw      x31, 0x34(sp)                       # Recover t6
 
+#if __riscv_32e
+    addi    sp, sp, 260                         # Recover stack frame with floating point enabled
+#else
     addi    sp, sp, 128                         # Recover stack frame
+#endif
     mret                                        # Return to point of interrupt
 
     /*} else {*/
@@ -176,6 +246,24 @@ _tx_thread_context_restore_switch:
     lw      t0, 8(t1)
     ori     t3, x0, 1                           # Build interrupt stack type
     sw      t3, (t0)
+
+#if __riscv_32e
+
+    /* Store floating point preserved registers.  */
+ 
+    fsw     f8,  0x9C(t0)                       # Store fs0
+    fsw     f9,  0xA0(t0)                       # Store fs1
+    fsw     f18, 0xC4(t0)                       # Store fs2
+    fsw     f19, 0xC8(t0)                       # Store fs3
+    fsw     f20, 0xCC(t0)                       # Store fs4
+    fsw     f21, 0xD0(t0)                       # Store fs5
+    fsw     f22, 0xD4(t0)                       # Store fs6
+    fsw     f23, 0xD8(t0)                       # Store fs7
+    fsw     f24, 0xDC(t0)                       # Store fs8
+    fsw     f25, 0xE0(t0)                       # Store fs9
+    fsw     f26, 0xE4(t0)                       # Store fs10
+    fsw     f27, 0xE8(t0)                       # Store fs11
+#endif
 
     sw      x8, 0x30(t0)                        # Store s0
     sw      x9, 0x2C(t0)                        # Store s1

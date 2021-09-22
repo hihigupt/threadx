@@ -6,7 +6,7 @@ set(CMAKE_TOOLCHAIN_FILE ${CMAKE_CURRENT_LIST_DIR}/riscv_gcc.cmake)
 
 project(sample_threadx C ASM)
 
-set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS} -march=rv32imaf -mabi=ilp32" CACHE INTERNAL "c compiler flags")
+set(CMAKE_C_FLAGS   "${CMAKE_C_FLAGS}" CACHE INTERNAL "c compiler flags")
 set(TX_COMMON ${CMAKE_CURRENT_LIST_DIR}/../../../../common)
 
 file(GLOB TX_SRC ${TX_COMMON}/src/*.c)

@@ -69,7 +69,30 @@
     .global  _tx_thread_system_return
 _tx_thread_system_return:
 
+#if __riscv_32e 
+    addi    sp, sp, -116
+#else
     addi    sp, sp, -64
+#endif
+
+#if __riscv_32e 
+
+    /* Store floating point preserved registers.  */
+    fsw     f8,  0x3C(sp)                              
+    fsw     f9,  0x40(sp)                              
+    fsw     f18, 0x44(sp)                              
+    fsw     f19, 0x48(sp)                              
+    fsw     f20, 0x4C(sp)                              
+    fsw     f21, 0x50(sp)                              
+    fsw     f22, 0x54(sp)                              
+    fsw     f23, 0x58(sp)                              
+    fsw     f24, 0x5C(sp)                              
+    fsw     f25, 0x60(sp)                              
+    fsw     f26, 0x64(sp)                              
+    fsw     f27, 0x68(sp)                              
+    csrr    t0, fcsr
+    sw      t0, 0x6C(sp)                               
+#endif
 
     sw      x0, (sp)
     sw      s11,4(sp)

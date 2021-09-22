@@ -45,7 +45,13 @@ exit:
   .globl exception_handler
 exception_handler :
   /* Save stack */
+
+#if __riscv_32e
+  addi    sp, sp, -260
+#else
   addi    sp, sp, -128
+#endif
+
   sw      x1, 0x70(sp)                            # Store RA
   csrr    x1, mcause
   bge     x1, x0, error_exceptions                # If negative (msb set), it's a normal interrupt.

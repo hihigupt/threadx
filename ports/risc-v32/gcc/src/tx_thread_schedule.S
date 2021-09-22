@@ -121,6 +121,44 @@ __tx_thread_schedule_loop:
     lw      t2, (sp)
     beqz    t2, __tx_thread_schedule_sync_restore
 
+
+#if __riscv_32e
+    flw     f0, 0x7C(sp)                    # Recover ft0
+    flw     f1, 0x80(sp)                    # Recover ft1
+    flw     f2, 0x84(sp)                    # Recover ft2
+    flw     f3, 0x88(sp)                    # Recover ft3
+    flw     f4, 0x8C(sp)                    # Recover ft4
+    flw     f5, 0x90(sp)                    # Recover ft5
+    flw     f6, 0x94(sp)                    # Recover ft6
+    flw     f7, 0x98(sp)                    # Recover ft7
+    flw     f8, 0x9C(sp)                    # Recover fs0
+    flw     f9, 0xA0(sp)                    # Recover fs1
+    flw     f10,0xA4(sp)                    # Recover fa0
+    flw     f11,0xA8(sp)                    # Recover fa1
+    flw     f12,0xAC(sp)                    # Recover fa2
+    flw     f13,0xB0(sp)                    # Recover fa3
+    flw     f14,0xB4(sp)                    # Recover fa4
+    flw     f15,0xB8(sp)                    # Recover fa5
+    flw     f16,0xBC(sp)                    # Recover fa6
+    flw     f17,0xC0(sp)                    # Recover fa7
+    flw     f18,0xC4(sp)                    # Recover fs2
+    flw     f19,0xC8(sp)                    # Recover fs3
+    flw     f20,0xCC(sp)                    # Recover fs4
+    flw     f21,0xD0(sp)                    # Recover fs5
+    flw     f22,0xD4(sp)                    # Recover fs6
+    flw     f23,0xD8(sp)                    # Recover fs7
+    flw     f24,0xDC(sp)                    # Recover fs8
+    flw     f25,0xE0(sp)                    # Recover fs9
+    flw     f26,0xE4(sp)                    # Recover fs10
+    flw     f27,0xE8(sp)                    # Recover fs11
+    flw     f28,0xEC(sp)                    # Recover ft8
+    flw     f29,0xF0(sp)                    # Recover ft9
+    flw     f30,0xF4(sp)                    # Recover ft10
+    flw     f31,0xF8(sp)                    # Recover ft11
+    lw      t0, 0xFC(sp)                    # Recover fcsr
+    csrw    fcsr, t0                        # 
+#endif
+
     /* interrupt frame */
     lw      t0, 120(sp)
     csrw    mepc, t0
@@ -156,12 +194,33 @@ __tx_thread_schedule_loop:
     lw      a0, 108(sp)
     lw      ra, 112(sp)
 
-    add     sp, sp, 128
+#if __riscv_32e
+    addi    sp, sp, 260                     # Recover stack frame - with floating point registers  
+#else
+    addi    sp, sp, 128                     # Recover stack frame - without floating point registers
+#endif
 
     mret
 
 __tx_thread_schedule_sync_restore:
     /* suspend thread frame */
+
+#if __riscv_32e 
+    flw     f8, 0x3C(sp)                    # Recover fs0
+    flw     f9, 0x40(sp)                    # Recover fs1
+    flw     f18,0x44(sp)                    # Recover fs2
+    flw     f19,0x48(sp)                    # Recover fs3
+    flw     f20,0x4C(sp)                    # Recover fs4
+    flw     f21,0x50(sp)                    # Recover fs5
+    flw     f22,0x54(sp)                    # Recover fs6
+    flw     f23,0x58(sp)                    # Recover fs7
+    flw     f24,0x5C(sp)                    # Recover fs8
+    flw     f25,0x60(sp)                    # Recover fs9
+    flw     f26,0x64(sp)                    # Recover fs10
+    flw     f27,0x68(sp)                    # Recover fs11
+    lw      t0, 0x6C(sp)                    # Recover fcsr
+    csrw    fcsr, t0                        # 
+#endif
 
     lw      s11, 4(sp)
     lw      s10, 8(sp)
@@ -179,6 +238,10 @@ __tx_thread_schedule_sync_restore:
     lw      t0, 56(sp)
     csrw    mstatus, t0
 
-    addi     sp, sp, 64
+#if __riscv_32e
+    addi    sp, sp, 116                      # Recover stack frame
+#else
+    addi    sp, sp, 64                       # Recover stack frame
+#endif
 
     ret

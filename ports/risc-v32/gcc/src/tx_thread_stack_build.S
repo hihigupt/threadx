@@ -71,7 +71,12 @@ _tx_thread_stack_build:
     and     t0, t0, t1
 
     /* Save 32 registers */
-    add     t0, t0, -128                    # Allocate space for
+#if __riscv_32e
+    addi    t0, t0, -260
+#else
+    addi    t0, t0, -128
+#endif
+
     li      t1, 1                           # Build stack typepe
     sw      t1, 0(t0)                       # Place stack type o
     sw      x0, 4(t0)                       # Initial s11
@@ -103,6 +108,45 @@ _tx_thread_stack_build:
     sw      x0, 108(t0)                     # Initial a0
     sw      x0, 112(t0)                     # Initial ra
     sw      a1, 120(t0)                     # Initial mepc
+#if __riscv_32e
+    sw      x0, 124(t0)                     # Inital ft0
+    sw      x0, 128(t0)                     # Inital ft1
+    sw      x0, 132(t0)                     # Inital ft2
+    sw      x0, 136(t0)                     # Inital ft3
+    sw      x0, 140(t0)                     # Inital ft4
+    sw      x0, 144(t0)                     # Inital ft5
+    sw      x0, 148(t0)                     # Inital ft6
+    sw      x0, 152(t0)                     # Inital ft7
+    sw      x0, 156(t0)                     # Inital fs0
+    sw      x0, 160(t0)                     # Inital fs1
+    sw      x0, 164(t0)                     # Inital fa0
+    sw      x0, 168(t0)                     # Inital fa1
+    sw      x0, 172(t0)                     # Inital fa2
+    sw      x0, 176(t0)                     # Inital fa3
+    sw      x0, 180(t0)                     # Inital fa4
+    sw      x0, 184(t0)                     # Inital fa5
+    sw      x0, 188(t0)                     # Inital fa6
+    sw      x0, 192(t0)                     # Inital fa7
+    sw      x0, 196(t0)                     # Inital fs2
+    sw      x0, 200(t0)                     # Inital fs3
+    sw      x0, 204(t0)                     # Inital fs4
+    sw      x0, 208(t0)                     # Inital fs5
+    sw      x0, 212(t0)                     # Inital fs6
+    sw      x0, 216(t0)                     # Inital fs7
+    sw      x0, 220(t0)                     # Inital fs8
+    sw      x0, 224(t0)                     # Inital fs9
+    sw      x0, 228(t0)                     # Inital fs10
+    sw      x0, 232(t0)                     # Inital fs11
+    sw      x0, 236(t0)                     # Inital ft8
+    sw      x0, 240(t0)                     # Inital ft9
+    sw      x0, 244(t0)                     # Inital ft10
+    sw      x0, 248(t0)                     # Inital ft11
+    csrr    a1, fcsr                        # Read fcsr and use it for initial value for each thread
+    sw      a1, 252(t0)                     # Initial fscr
+    sw      x0, 256(t0)                     # Reserved word (0)
+#else
+    sw      x0, 124(t0)                     # Reserved word (0)
+#endif
 
     sw      t0, 8(a0)
 

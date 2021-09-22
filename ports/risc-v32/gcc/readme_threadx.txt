@@ -22,6 +22,11 @@ You should observe the compilation of sample_threadx.c (which is the demonstrati
 application) and linking with tx.a. The resulting file DEMO is a binary file 
 that can be executed.
 
+This Demo runs on renode simulation of MIV Board. To run this demo use run.sh script
+under folder example_build.
+
+    ./run.sh
+    
 3.  System Initialization
 
 The entry point in ThreadX for the RISC-V using GNU GCC tools is at label 
@@ -89,8 +94,41 @@ associated thread control block TX_THREAD.
      0x70                   ra  (x1)
      0x74                   reserved
      0x78                   mepc
-
-Note: This port right now doesn't support saving floating point registers.
+#if __riscv_32e
+     0x7C                   ft0
+     0x80                   ft1
+     0x84                   ft2
+     0x88                   ft3
+     0x8C                   ft4
+     0x90                   ft5
+     0x94                   ft6
+     0x98                   ft7
+     0x9C                   fs0
+     0xA0                   fs1
+     0xA4                   fa0
+     0xA8                   fa1
+     0xAC                   fa2
+     0xB0                   fa3
+     0xB4                   fa4
+     0xB8                   fa5
+     0xBC                   fa6
+     0xC0                   fa7
+     0xC4                   fs2
+     0xC8                   fs3
+     0xCC                   fs4
+     0xD0                   fs5
+     0xD4                   fs6
+     0xD8                   fs7
+     0xDC                   fs8
+     0xE0                   fs9
+     0xE4                   fs10
+     0xE8                   fs11
+     0xEC                   ft8
+     0xF0                   ft9
+     0xF4                   ft10
+     0xF8                   ft11
+     0xFC                   fcsr
+#endif
 
 5.  Improving Performance
 

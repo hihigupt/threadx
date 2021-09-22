@@ -95,6 +95,35 @@ _tx_thread_context_save:
     csrr    t0, mepc                        # Load exception program counter
     sw      t0, 0x78(sp)                    # Save it on the stack
 
+
+#if __riscv_32e
+
+    /* Save floating point scratch registers.  */
+    
+    fsw     f0, 0x7C(sp)                    # Store ft0
+    fsw     f1, 0x80(sp)                    # Store ft1
+    fsw     f2, 0x84(sp)                    # Store ft2
+    fsw     f3, 0x88(sp)                    # Store ft3
+    fsw     f4, 0x8C(sp)                    # Store ft4
+    fsw     f5, 0x90(sp)                    # Store ft5
+    fsw     f6, 0x94(sp)                    # Store ft6
+    fsw     f7, 0x98(sp)                    # Store ft7
+    fsw     f10,0xA4(sp)                    # Store fa0
+    fsw     f11,0xA8(sp)                    # Store fa1
+    fsw     f12,0xAC(sp)                    # Store fa2
+    fsw     f13,0xB0(sp)                    # Store fa3
+    fsw     f14,0xB4(sp)                    # Store fa4
+    fsw     f15,0xB8(sp)                    # Store fa5
+    fsw     f16,0xBC(sp)                    # Store fa6
+    fsw     f17,0xC0(sp)                    # Store fa7
+    fsw     f28,0xEC(sp)                    # Store ft8
+    fsw     f29,0xF0(sp)                    # Store ft9
+    fsw     f30,0xF4(sp)                    # Store ft10
+    fsw     f31,0xF8(sp)                    # Store ft11
+    csrr    t0, fcsr 
+    sw      t0, 0xFC(sp)                    # Store fcsr
+#endif
+
     la      t0, _tx_thread_system_state
     lw      t1, (t0)
     add     t2, t1, 1
